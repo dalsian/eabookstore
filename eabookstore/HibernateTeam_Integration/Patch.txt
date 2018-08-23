@@ -1,0 +1,7 @@
+##################### Integration Server for HibernateTeam #########################
+Patches:
+
+March21 5:22pm : Created patch text file;
+
+Added edu.mum.hbteam.sup.domain.*
+Changed class types of domain objects passed by supplier exchange.

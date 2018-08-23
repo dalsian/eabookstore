@@ -1,0 +1,6 @@
+##################### Inventory site (REST) for HibernateTeam #########################
+Patches:
+
+March21 5:20pm : Created patch text file;
+March21 9:00pm : Removed supplier amqp listener test code in listener package and rabbit-app-context.xml
+				Modification in BookDAO to find book by isbn.

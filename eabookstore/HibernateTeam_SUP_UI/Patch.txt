@@ -1,0 +1,5 @@
+##################### Supplier site (UI) for HibernateTeam #########################
+Patches:
+
+March21 5:00pm : Tested new changes in RESTful services;
+March21 9:00pm: Removed isbn field disabled in jsp.

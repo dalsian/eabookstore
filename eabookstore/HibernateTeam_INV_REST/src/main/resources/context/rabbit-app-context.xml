@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:rabbit="http://www.springframework.org/schema/rabbit"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/rabbit
+        http://www.springframework.org/schema/rabbit/spring-rabbit.xsd">
+
+
+	<rabbit:connection-factory id="amqpConnectionFactory" host="localhost" username="dalsian" password="dalsian"/>
+    <rabbit:admin connection-factory="amqpConnectionFactory" />
+ 
+ 
+ 	<!-- *********** INVENTORY EXCHANGE ***************** -->
+	<rabbit:direct-exchange name="hb.inv_direct" durable="true">
+		<rabbit:bindings>
+			<rabbit:binding queue="hbInvStockRequestQueue" key="hb.inv.book.qty"></rabbit:binding>
+			<rabbit:binding queue="hbInvNewPublishQueue" key="hb.inv.book.new"></rabbit:binding>
+			<rabbit:binding queue="hbInvStockResponseQueue" key="hb.inv.book.qty.res"></rabbit:binding>
+		</rabbit:bindings>
+	</rabbit:direct-exchange>
+
+	<rabbit:queue name="hbInvStockRequestQueue" durable="true"/>
+	<rabbit:queue name="hbInvNewPublishQueue" durable="true"/>
+	<rabbit:queue name="hbInvStockResponseQueue" durable="true"/>
+
+	<!-- *********** DIRECT PRODUCER ***************** -->
+	
+    <rabbit:template id="stockRequestTemplate" connection-factory="amqpConnectionFactory"
+                     reply-timeout="2000" routing-key="hb.inv.book.qty"
+                     exchange="hb.inv_direct" />
+ 
+ 	<!--  ****************  DIRECT CONSUMER *************************  -->
+	<rabbit:listener-container connection-factory="amqpConnectionFactory">
+		<rabbit:listener ref="hbInvNewPublishQueueListener" method="listenNewPublish" queue-names="hbInvNewPublishQueue" />
+	</rabbit:listener-container>
+	<bean id="hbInvNewPublishQueueListener" class="edu.mum.hbteam.inv.amqp.MessageListenerImpl" />
+	
+	<!--  ****************  DIRECT CONSUMER *************************  -->
+	<rabbit:listener-container connection-factory="amqpConnectionFactory">
+		<rabbit:listener ref="hbInvStockResponseQueueListener" method="listenStockResponse" queue-names="hbInvStockResponseQueue" />
+	</rabbit:listener-container>
+	<bean id="hbInvStockResponseQueueListener" class="edu.mum.hbteam.inv.amqp.MessageListenerImpl" />
+ 
+ 
+ 
+ 
+ 
+
+	<!-- **************************** SUPPLIER EXCHANGE ****************************** 
+	<rabbit:direct-exchange name="hb.supplier_direct" durable="true">
+		<rabbit:bindings>
+			<rabbit:binding queue="hbSupplierStockRequestQueue" key="hb.supplier.book.qty"></rabbit:binding>
+			<rabbit:binding queue="hbSupplierNewPublishQueue" key="hb.supplier.book.new"></rabbit:binding>
+			<rabbit:binding queue="hbSupplierStockResponseQueue" key="hb.supplier.book.qty.res"></rabbit:binding>
+		</rabbit:bindings>
+	</rabbit:direct-exchange>
+	
+	<rabbit:queue name="hbSupplierStockRequestQueue" durable="true"/>
+	<rabbit:queue name="hbSupplierNewPublishQueue" durable="true"/>
+	<rabbit:queue name="hbSupplierStockResponseQueue" durable="true"/>
+	-->
+	
+	<!-- *********** DIRECT PRODUCER ***************** 
+    <rabbit:template id="newPublishTemplate" connection-factory="amqpConnectionFactory"
+                     reply-timeout="2000" routing-key="hb.supplier.book.new"
+                     exchange="hb.supplier_direct" />
+                     -->
+    <!-- *********** DIRECT PRODUCER ***************** 
+    <rabbit:template id="stockResponseTemplate" connection-factory="amqpConnectionFactory"
+                     reply-timeout="2000" routing-key="hb.supplier.book.qty.res"
+                     exchange="hb.supplier_direct" />
+ -->
+ 
+ 	<!--  ****************  DIRECT CONSUMER *************************  
+	<rabbit:listener-container connection-factory="amqpConnectionFactory">
+		<rabbit:listener ref="hbSupplierStockRequestQueueListener" method="listenStockRequest" queue-names="hbSupplierStockRequestQueue" />
+	</rabbit:listener-container>-->
+	<!-- 
+	<bean id="hbSupplierStockRequestQueueListener" class="edu.mum.hbteam.inv.amqp.MessageListenerImpl" /> -->
+ 	<!-- ************************************************************************* -->
+ 	
+</beans>

@@ -1,0 +1,5 @@
+##################### Supplier site (RESTful service) for HibernateTeam #########################
+Patches:
+
+March21 5:00pm : Added messaging services;
+

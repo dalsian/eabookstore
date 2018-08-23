@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/integration"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:amqp="http://www.springframework.org/schema/integration/amqp"
+	xmlns:rabbit="http://www.springframework.org/schema/rabbit" xmlns:mail="http://www.springframework.org/schema/integration/mail"
+	xmlns:stream="http://www.springframework.org/schema/integration/stream"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+			http://www.springframework.org/schema/beans/spring-beans.xsd
+			http://www.springframework.org/schema/context
+			http://www.springframework.org/schema/context/spring-context.xsd
+			http://www.springframework.org/schema/integration
+			http://www.springframework.org/schema/integration/spring-integration.xsd
+ 			http://www.springframework.org/schema/integration/mail
+    			http://www.springframework.org/schema/integration/mail/spring-integration-mail.xsd
+ 			http://www.springframework.org/schema/integration/amqp 
+ 			http://www.springframework.org/schema/integration/amqp/spring-integration-amqp.xsd
+			http://www.springframework.org/schema/integration/stream
+			http://www.springframework.org/schema/integration/stream/spring-integration-stream.xsd
+			http://www.springframework.org/schema/rabbit
+        	http://www.springframework.org/schema/rabbit/spring-rabbit.xsd">
+
+	<rabbit:connection-factory id="amqpConnectionFactory"
+		host="localhost" username="dalsian" password="dalsian" />
+	<rabbit:template id="amqpTemplate" connection-factory="amqpConnectionFactory"
+		reply-timeout="2000" />
+
+	<!-- *********** STOCK REQUEST INTEGRATION FLOW ***************** -->
+	<amqp:inbound-channel-adapter channel="stockRequestInboundChannel"
+		queue-names="hbInvStockRequestQueue" id="stockRequestInboundAdapter"
+		connection-factory="amqpConnectionFactory" />
+	<channel id="stockRequestInboundChannel" />
+	<transformer output-channel="stockRequestOutboundChannel"
+		input-channel="stockRequestInboundChannel" id="stockRequestTransformer"
+		ref="stockRequestTransformerBean">
+	</transformer>
+	<beans:bean id="stockRequestTransformerBean"
+		class="edu.mum.hbteam.integration.transformer.StockRequestTransformerImpl" />
+	<channel id="stockRequestOutboundChannel"></channel>
+	<amqp:outbound-channel-adapter id="stockRequestOutboundAdapter"
+		amqp-template="amqpTemplate" routing-key="hb.supplier.book.qty"
+		exchange-name="hb.supplier_direct" channel="stockRequestOutboundChannel">
+		<!-- default-delivery-mode="NON_PERSISTENT" -->
+	</amqp:outbound-channel-adapter>
+
+	<!-- *********** NEW PUBLISH INTEGRATION FLOW ***************** -->
+	<amqp:inbound-channel-adapter channel="newPublishInboundChannel"
+		queue-names="hbSupplierNewPublishQueue" id="newPublishInboundAdapter"
+		connection-factory="amqpConnectionFactory" />
+	<channel id="newPublishInboundChannel" />
+	<transformer output-channel="newPublishOutboundChannel"
+		input-channel="newPublishInboundChannel" id="newPublishTransformer"
+		ref="newPublishTransformerBean">
+	</transformer>
+	<beans:bean id="newPublishTransformerBean"
+		class="edu.mum.hbteam.integration.transformer.NewPublishTransformerImpl" />
+	<channel id="newPublishOutboundChannel"></channel>
+	<amqp:outbound-channel-adapter id="newPublishOutboundAdapter"
+		amqp-template="amqpTemplate" routing-key="hb.inv.book.new"
+		exchange-name="hb.inv_direct" channel="newPublishOutboundChannel">
+		<!-- default-delivery-mode="NON_PERSISTENT" -->
+	</amqp:outbound-channel-adapter>
+
+	<!-- *********** STOCK RESPONSE INTEGRATION FLOW ***************** -->
+	<amqp:inbound-channel-adapter channel="stockResponseInboundChannel"
+		queue-names="hbSupplierStockResponseQueue" id="stockResponseInboundAdapter"
+		connection-factory="amqpConnectionFactory" />
+	<channel id="stockResponseInboundChannel" />
+	<transformer output-channel="stockResponseOutboundChannel"
+		input-channel="stockResponseInboundChannel" id="stockResponseTransformer"
+		ref="stockResponseTransformerBean">
+	</transformer>
+	<beans:bean id="stockResponseTransformerBean"
+		class="edu.mum.hbteam.integration.transformer.StockResponseTransformerImpl" />
+	<channel id="stockResponseOutboundChannel"></channel>
+	<amqp:outbound-channel-adapter id="stockResponseOutboundAdapter"
+		amqp-template="amqpTemplate" routing-key="hb.inv.book.qty.res"
+		exchange-name="hb.inv_direct" channel="stockResponseOutboundChannel">
+		<!-- default-delivery-mode="NON_PERSISTENT" -->
+	</amqp:outbound-channel-adapter>
+
+
+	<!-- *********** INVENTORY EXCHANGE ***************** -->
+	<rabbit:direct-exchange name="hb.inv_direct"
+		durable="true">
+		<rabbit:bindings>
+			<rabbit:binding queue="hbInvStockRequestQueue" key="hb.inv.book.qty"></rabbit:binding>
+			<rabbit:binding queue="hbInvNewPublishQueue" key="hb.inv.book.new"></rabbit:binding>
+			<rabbit:binding queue="hbInvStockResponseQueue" key="hb.inv.book.qty.res"></rabbit:binding>
+		</rabbit:bindings>
+	</rabbit:direct-exchange>
+
+	<rabbit:queue name="hbInvStockRequestQueue" durable="true" />
+	<rabbit:queue name="hbInvNewPublishQueue" durable="true" />
+	<rabbit:queue name="hbInvStockResponseQueue" durable="true" />
+
+
+	<!-- **************************** SUPPLIER EXCHANGE ****************************** -->
+
+	<rabbit:direct-exchange name="hb.supplier_direct"
+		durable="true">
+		<rabbit:bindings>
+			<rabbit:binding queue="hbSupplierStockRequestQueue"
+				key="hb.supplier.book.qty"></rabbit:binding>
+			<rabbit:binding queue="hbSupplierNewPublishQueue" key="hb.supplier.book.new"></rabbit:binding>
+			<rabbit:binding queue="hbSupplierStockResponseQueue"
+				key="hb.supplier.book.qty.res"></rabbit:binding>
+		</rabbit:bindings>
+	</rabbit:direct-exchange>
+
+	<rabbit:queue name="hbSupplierStockRequestQueue" durable="true" />
+	<rabbit:queue name="hbSupplierNewPublishQueue" durable="true" />
+	<rabbit:queue name="hbSupplierStockResponseQueue" durable="true" />
+
+
+</beans:beans>
